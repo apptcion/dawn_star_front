@@ -7,7 +7,7 @@ import '../widgets/general_banner_widget.dart';
 import '../models/product_model.dart';
 import '../widgets/product_card.dart';
 import '../widgets/brand_filter_chip.dart';
-
+//안녕하세요
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 

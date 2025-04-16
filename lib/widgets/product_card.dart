@@ -18,7 +18,8 @@ class ProductCard extends StatelessWidget {
           child: Container(
             width: 170.w,
             height: 170.h,
-            color: Colors.grey[300],
+            color: const Color(0xFFF3F1EF),
+            child: Image.memory(product.imgBytes),
           ),
         ),
         SizedBox(height: 12.h),

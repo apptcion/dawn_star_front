@@ -23,34 +23,9 @@ class _UpcyclingPageState extends State<UpcyclingPage> {
       id: '1',
       name: '업사이클링 가방',
       brand: '에코브랜드',
-      price: '45,00',
-      imageUrl: '',
-      category: '가방',
-    ),
-    Product(
-      id: '2',
-      name: '재활용 플라스틱 의자',
-      brand: '그린홈',
-      price: '120,000',
-      imageUrl: '',
-      category: '가구',
-    ),
-    Product(
-      id: '3',
-      name: '폐타이어 스툴',
-      brand: '업사이클',
-      price: '85,000',
-      imageUrl: '',
-      category: '가구',
-    ),
-    Product(
-      id: '4',
-      name: '재생 유리 컵',
-      brand: '에코웨어',
-      price: '15,000',
-      imageUrl: '',
-      category: '주방용품',
-    ),
+      priceNumber: 1,
+      base64Str: '',
+    )
   ];
 
   void _addChip(String keyword) {

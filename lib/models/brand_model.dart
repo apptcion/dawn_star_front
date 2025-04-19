@@ -19,6 +19,8 @@ class Brand {
   }
 
   factory Brand.fromJSON(Map<String, dynamic> json) {
+    print('brandName : ' + json['brand_name']);
+
     return Brand(
       id: json['_id'],
       name: json['brand_name'],

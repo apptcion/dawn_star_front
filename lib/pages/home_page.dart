@@ -136,7 +136,7 @@ class HomeTab extends StatelessWidget {
 
 Future<List<Product>> fetchProducts() async{
   final response = await http.get(
-      Uri.parse('http://10.0.2.2:49154/product/getALL'));
+      Uri.parse('http://10.0.2.2:3000/product/getALL'));
   if (response.statusCode == 200){
     final List<dynamic> jsonList = jsonDecode(response.body);
     return jsonList.map((json) => Product.fromJSON(json)).toList();
@@ -228,7 +228,7 @@ class _EcoBrandProductState extends State<EcoBrandProduct> {
   Future<void> _fetchBrands() async {
     try {
       final response = await http.get(
-          Uri.parse('http://10.0.2.2:49154/brand/getALLProd?brand=ALL'));
+          Uri.parse('http://10.0.2.2:3000/brand/getALL?getProd=true&type=eco'));
       debugPrint("Response Statue Code : " + response.statusCode.toString());
       if (response.statusCode == 200) {
         List<dynamic> brand = jsonDecode(response.body);
@@ -250,28 +250,46 @@ class _EcoBrandProductState extends State<EcoBrandProduct> {
     }
   }
 
-  Widget _buildBrandSection(String brand, Uint8List LogoImg, List<Product> products) {
+  void _changeSelectedBrand(String brandName){
+    setState(() {
+      _selectedBrand = brandName;
+    });
+  }
+
+  Widget _buildBrandSection(String brand, Uint8List LogoImg, List<Product> products, void Function(String) changeSelctedBrand) {
     return Column(
       children: [
-        Container(
-          width: 362.w,
-          height: 142.h,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: Image.memory(
-              LogoImg,
-              fit: BoxFit.cover),
+        GestureDetector(
+          onTap: (){
+            changeSelctedBrand(brand);
+          },
+          child: Container(
+            width: 362.w,
+            height: 142.h,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Image.memory(
+                LogoImg,
+                fit: BoxFit.cover
+            ),
+          )
         ),
         SizedBox(height: 16.h),
-        Row(
-          children: [
-            ProductCard(product: products[0], showBrand: false),
-            SizedBox(width: 20.w),
-            if (products.length > 1)
-              ProductCard(product: products[1], showBrand: false),
-          ],
+        SizedBox(
+          height: 280.h,
+          child:
+            ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: products.length,
+              padding: EdgeInsets.only(right: 16.w),
+              itemBuilder: (context, index){
+                return ProductCard(product: products[index], showBrand: false);
+              },
+              separatorBuilder: (context, index) => SizedBox(width: 20.w),
+            )
         ),
         SizedBox(height: 27.h),
       ],
@@ -305,6 +323,7 @@ class _EcoBrandProductState extends State<EcoBrandProduct> {
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: BrandFilterSection(
                 brands: ['All', ... _brands.map((brand) => brand.name).toList()],
+                selectedBrand: _selectedBrand,
                 onBrandSelected: (brand) {
                   setState(() {
                     _selectedBrand = brand;
@@ -324,12 +343,14 @@ class _EcoBrandProductState extends State<EcoBrandProduct> {
                    _buildBrandSection(
                      brand.name,
                      brand.brandImg,
-                     brand.products as List<Product>
+                     brand.products as List<Product>,
+                     _changeSelectedBrand
                    )
                 ).toList()
               ) : _buildBrandSection(_selectedBrand,
                   _brands.firstWhere((brand) => brand.name == _selectedBrand).brandImg,
-                  _brands.firstWhere((brand) => brand.name == _selectedBrand).products as List<Product>)
+                  _brands.firstWhere((brand) => brand.name == _selectedBrand).products as List<Product>,
+                  _changeSelectedBrand)
             )
       ],
     );
@@ -339,11 +360,13 @@ class _EcoBrandProductState extends State<EcoBrandProduct> {
 class BrandFilterSection extends StatefulWidget {
   final List<String> brands;
   final Function(String) onBrandSelected;
-  
+  final String selectedBrand;
+
   const BrandFilterSection({
     super.key, 
     required this.brands,
     required this.onBrandSelected,
+    required this.selectedBrand
   });
 
   @override
@@ -351,7 +374,6 @@ class BrandFilterSection extends StatefulWidget {
 }
 
 class _BrandFilterSectionState extends State<BrandFilterSection> {
-  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -363,11 +385,8 @@ class _BrandFilterSectionState extends State<BrandFilterSection> {
             padding: EdgeInsets.only(right: 9.w),
             child: BrandFilterChip(
               label: widget.brands[index],
-              isSelected: _selectedIndex == index,
+              isSelected: widget.selectedBrand == widget.brands[index],
               onSelected: () {
-                setState(() {
-                  _selectedIndex = index;
-                });
                 widget.onBrandSelected(widget.brands[index]);
               },
             ),
@@ -481,6 +500,7 @@ class _GeneralBrandTabContentState extends State<GeneralBrandTabContent> {
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: BrandFilterSection(
                   brands: const ['All', 'EARTH, US', 'UPMOST', 'REBORN', 'Romang Story'],
+                  selectedBrand: 'ALL',
                   onBrandSelected: (brand) {
                     setState(() {
                       _selectedBrand = brand;

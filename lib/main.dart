@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final isFirstRun = prefs.getBool('isFirstRun') ?? true;
     if(isFirstRun){
-      await prefs.setBool('isFirstRun', true);
+      await prefs.setBool('isFirstRun', false);
     }
     return isFirstRun;
   }
@@ -37,6 +37,9 @@ class MyApp extends StatelessWidget {
             }
 
             return MaterialApp(
+              routes: {
+                '/home_page' :(context) => HomePage()
+              },
               title: 'Upcycling App',
               theme: ThemeData(
                 appBarTheme: AppBarTheme(

@@ -134,6 +134,17 @@ class HomeTab extends StatelessWidget {
   }
 }
 
+// class BrandTab extends StatefulWidget{
+//   const BrandTab({super.key});
+//
+//   @override
+//   State<BrandTab> createState() => _BrandTab();
+// }
+//
+// class _BrandTab extends State<BrandTab>{
+//
+// }
+
 Future<List<Product>> fetchProducts() async{
   final response = await http.get(
       Uri.parse('http://10.0.2.2:3000/product/getALL'));
@@ -153,7 +164,6 @@ class EcoBrandTab extends StatefulWidget {
 }
 
 class _EcoBrandTabState extends State<EcoBrandTab> {
-
 
 
   @override

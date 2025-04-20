@@ -22,6 +22,9 @@ class Product {
   }
 
   factory Product.fromJSON(Map<String, dynamic> json){
+
+    print("productName : " + json['product_name']);
+
     return Product(
       id: json['_id'],
       name: json['product_name'],

@@ -13,7 +13,7 @@ class BannerWidget extends StatefulWidget {
 
 Future<List<BannerModel>> fetchBanners() async {
   final response = await http.get(
-    Uri.parse('http://10.0.2.2:49154/manage/getBanner'),
+    Uri.parse('http://10.0.2.2:3000/manage/getBanner'),
   );
   if (response.statusCode == 200) {
     List<dynamic> bannerImgs = jsonDecode(response.body);

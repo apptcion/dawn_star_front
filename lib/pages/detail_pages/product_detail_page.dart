@@ -1,17 +1,26 @@
+import 'dart:convert';
+
+import 'package:daystar/models/product_info_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../models/product_model.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final Product product;
-
   const ProductDetailPage({super.key, required this.product});
+
+  Future<ProductInfo> _fetchProductInfo() async {
+    return new ProductInfo();
+  }
 
   @override
   Widget build(BuildContext context) {
+
+
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('상품 상세'),
+        title: Text('${product.name}'),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -26,11 +35,12 @@ class ProductDetailPage extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 300.h,
-              color: Colors.grey[300],
+              color: Color(0xFFF3F1EF),
               child: Center(
-                child: Text(
-                  '상품 이미지',
-                  style: TextStyle(fontSize: 16.sp),
+                child: Image.memory(
+                    product.imgBytes,
+                    width : 250.w,
+                    fit: BoxFit.fill
                 ),
               ),
             ),
@@ -64,21 +74,31 @@ class ProductDetailPage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  Text(
-                    '상품 설명',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '여기에 상품의 상세 설명이 들어갑니다.',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey[700],
-                    ),
-                  ),
+                  FutureBuilder(
+                    future: _fetchProductInfo(),
+                    builder: (context, snapshot){
+                      return DefaultTabController(
+                        length: 3,
+                        child: Column(
+                          children: [
+                            TabBar(
+                                indicatorColor: Colors.transparent,
+                                labelColor: Color(0xFF333333),
+                                unselectedLabelColor: Color(0xFF565656),
+                                labelStyle: TextStyle(fontSize: 18.sp),
+                                unselectedLabelStyle: TextStyle(fontSize: 18.sp),
+                                tabs: [
+                                  Tab(text: '상품 정보'),
+                                  Tab(text: '리뷰 ${snapshot.data!.review.length}'),
+                                  Tab(text: '가치 정보')
+                                ]
+                            ),
+
+                          ],
+                        )
+                      );
+                    }
+                  )
                 ],
               ),
             ),
@@ -110,5 +130,12 @@ class ProductDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class InfoTab extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    return Text('');
   }
 }

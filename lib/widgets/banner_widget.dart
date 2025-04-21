@@ -5,15 +5,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../models/banner_model.dart';
 
 class BannerWidget extends StatefulWidget {
-  const BannerWidget({super.key});
+  final String type;
+  const BannerWidget({super.key, required this.type});
 
   @override
   State<BannerWidget> createState() => _BannerWidgetState();
 }
 
-Future<List<BannerModel>> fetchBanners() async {
+Future<List<BannerModel>> fetchBanners(String type) async {
   final response = await http.get(
-    Uri.parse('http://10.0.2.2:3000/manage/getBanner'),
+    Uri.parse('http://10.0.2.2:3000/manage/getBanner?type=${type}'),
   );
   if (response.statusCode == 200) {
     List<dynamic> bannerImgs = jsonDecode(response.body);
@@ -32,7 +33,7 @@ class _BannerWidgetState extends State<BannerWidget> {
   void initState() {
     super.initState();
 
-    _bannerFuture = fetchBanners();
+    _bannerFuture = fetchBanners(widget.type);
     _pageController.addListener(() {
       int next = _pageController.page!.round();
       if (_currentPage != next) {

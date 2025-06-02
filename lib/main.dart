@@ -1,10 +1,20 @@
+import 'package:daystar/config.dart';
 import 'package:daystar/pages/intro_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/home_page.dart';
 
-void main() => runApp(const MyApp());
+void main(){
+  const bool useAPIServer = true;
+  appConfig = AppConfig(
+    apiUrl: useAPIServer
+        ? 'https://api.xn--bm3bv8e.com'
+        : 'http://10.0.2.2:3000'
+  );
+
+ runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

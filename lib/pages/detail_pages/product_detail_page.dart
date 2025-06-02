@@ -9,6 +9,7 @@ class ProductDetailPage extends StatelessWidget {
   const ProductDetailPage({super.key, required this.product});
 
   Future<ProductInfo> _fetchProductInfo() async {
+    //temp data
     return ProductInfo(
         info: 'info',
         valueInfo: 'ValueInfo',

@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/material_filter_chip.dart';
 import '../widgets/product_card.dart';
 import '../models/product_model.dart';
+import '../config.dart';
 
 class UpcyclingPage extends StatefulWidget {
   const UpcyclingPage({super.key});
@@ -18,15 +22,27 @@ class _UpcyclingPageState extends State<UpcyclingPage> {
   bool _showDivider = false;
 
   // 임시 상품 데이터
-  final List<Product> _products = [
-    Product(
-      id: '1',
-      name: '업사이클링 가방',
-      brand: '에코브랜드',
-      priceNumber: 1,
-      base64Str: '',
-    )
+  late List<Product> _products = [
   ];
+
+  initState(){
+    super.initState();
+    fetchProducts('eco');
+  }
+
+  void fetchProducts(String type) async{
+    final response = await http.get(
+        Uri.parse('${appConfig.apiUrl}/product/getALL?type=${type}'));
+    if (response.statusCode == 200){
+      final List<dynamic> jsonList = jsonDecode(response.body);
+      setState(() {
+        _products = jsonList.map((json) => Product.fromJSON(json)).toList();
+      });
+
+    } else{
+      throw Exception("failed to load Products");
+    }
+  }
 
   void _addChip(String keyword) {
     _filterChipKey.currentState?.addChip(keyword);

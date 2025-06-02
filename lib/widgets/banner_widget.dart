@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../config.dart';
 import '../models/banner_model.dart';
+
 
 class BannerWidget extends StatefulWidget {
   final String type;
@@ -13,8 +15,9 @@ class BannerWidget extends StatefulWidget {
 }
 
 Future<List<BannerModel>> fetchBanners(String type) async {
+  debugPrint('${appConfig.apiUrl}/manage/getBanner?type=${type}');
   final response = await http.get(
-    Uri.parse('http://10.0.2.2:3000/manage/getBanner?type=${type}'),
+    Uri.parse('${appConfig.apiUrl}/manage/getBanner?type=${type}'),
   );
   if (response.statusCode == 200) {
     List<dynamic> bannerImgs = jsonDecode(response.body);

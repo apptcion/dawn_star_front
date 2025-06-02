@@ -1,12 +1,18 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:daystar/models/brand_model.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'upcycling_page.dart';
 import 'my_page.dart';
 import '../widgets/banner_widget.dart';
-import '../widgets/general_banner_widget.dart';
 import '../models/product_model.dart';
 import '../widgets/product_card.dart';
 import '../widgets/brand_filter_chip.dart';
+import '../config.dart';
+
 //안녕하세요
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -116,8 +122,8 @@ class HomeTab extends StatelessWidget {
                 child: TabBarView(
                   physics: const NeverScrollableScrollPhysics(),
                   children: const [
-                    EcoBrandTab(),
-                    GeneralBrandTab(),
+                    BrandTab(type: 'eco'),
+                    BrandTab(type: 'normal'),
                   ],
                 ),
               ),
@@ -129,123 +135,22 @@ class HomeTab extends StatelessWidget {
   }
 }
 
-class EcoBrandTab extends StatefulWidget {
-  const EcoBrandTab({super.key});
+class BrandTab extends StatefulWidget{
+  final String type;
+  const BrandTab({super.key, required this.type});
 
   @override
-  State<EcoBrandTab> createState() => _EcoBrandTabState();
+  State<BrandTab> createState() => _BrandTabState();
 }
 
-class _EcoBrandTabState extends State<EcoBrandTab> {
-  String _selectedBrand = 'All';
-
-  final Map<String, List<Product>> _brandProducts = {
-    'EARTH, US': [
-      Product(
-        id: 'earth_1',
-        name: '나만의 업사이클링 키링',
-        brand: 'EARTH, US',
-        price: '12,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-      Product(
-        id: 'earth_2',
-        name: '나만의 어스톡',
-        brand: 'EARTH, US',
-        price: '15,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-    ],
-    'UPMOST': [
-      Product(
-        id: 'upmost_1',
-        name: '업모스트 에코백',
-        brand: 'UPMOST',
-        price: '35,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-      Product(
-        id: 'upmost_2',
-        name: '업모스트 텀블러',
-        brand: 'UPMOST',
-        price: '28,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-    ],
-    'REBORN': [
-      Product(
-        id: 'reborn_1',
-        name: '리본 패브릭 가방',
-        brand: 'REBORN',
-        price: '55,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-      Product(
-        id: 'reborn_2',
-        name: '리본 에코 파우치',
-        brand: 'REBORN',
-        price: '23,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-    ],
-    'Glück': [
-      Product(
-        id: 'gluck_1',
-        name: '글륵 리사이클 팔찌',
-        brand: 'Glück',
-        price: '18,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-      Product(
-        id: 'gluck_2',
-        name: '글륵 에코 목걸이',
-        brand: 'Glück',
-        price: '22,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'eco',
-      ),
-    ],
-  };
-
-  Widget _buildBrandSection(String brand, List<Product> products) {
-    return Column(
-      children: [
-        Container(
-          width: 362.w,
-          height: 142.h,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-        ),
-        SizedBox(height: 16.h),
-        Row(
-          children: [
-            ProductCard(product: products[0], showBrand: false),
-            SizedBox(width: 20.w),
-            if (products.length > 1)
-              ProductCard(product: products[1], showBrand: false),
-          ],
-        ),
-        SizedBox(height: 27.h),
-      ],
-    );
-  }
-
+class _BrandTabState extends State<BrandTab>{
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BannerWidget(),
+          BannerWidget(type: widget.type),
           Padding(
             padding: EdgeInsets.only(left: 15.w, top: 19.h, bottom: 18.h),
             child: Text(
@@ -258,77 +163,196 @@ class _EcoBrandTabState extends State<EcoBrandTab> {
           ),
           SizedBox(
             height: 280.h,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.only(left: 16.w, right: 16.w),
-              itemCount: _brandProducts.values.expand((products) => products).length,
-              itemBuilder: (context, index) => ProductCard(
-                product: _brandProducts.values.expand((products) => products).toList()[index],
-              ),
-              separatorBuilder: (context, index) => SizedBox(width: 20.w),
+            child: FutureBuilder<List<Product>>(
+              future: fetchProducts(widget.type),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('오류 발생: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('상품이 없습니다.'));
+                }
+
+                // 데이터를 평탄화
+                final products = snapshot.data!;
+
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) => ProductCard(product: products[index]),
+                  separatorBuilder: (context, index) => SizedBox(width: 20.w),
+                );
+              },
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(left: 15.w, top: 23.h, bottom: 18.h),
+          BrandProduct(type: widget.type)
+        ],
+      ),
+    );
+  }
+}
+
+Future<List<Product>> fetchProducts(String type) async{
+  final response = await http.get(
+      Uri.parse('${appConfig.apiUrl}/product/getALL?type=${type}'));
+  if (response.statusCode == 200){
+    final List<dynamic> jsonList = jsonDecode(response.body);
+    return jsonList.map((json) => Product.fromJSON(json)).toList();
+  } else{
+    throw Exception("failed to load Products");
+  }
+}
+
+class BrandProduct extends StatefulWidget{
+  final String type;
+  const BrandProduct({super.key, required this.type});
+
+  @override
+  State<BrandProduct> createState() => _BrandProductState();
+}
+
+class _BrandProductState extends State<BrandProduct> {
+
+  String _selectedBrand = 'All';
+  List<Brand> _brands = [];
+  bool _isLoading = true;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBrands(widget.type);
+  }
+
+  Future<void> _fetchBrands(String type) async {
+    try {
+      final response = await http.get(
+          Uri.parse('${appConfig.apiUrl}/brand/getALL?getProd=true&type=${type}'));
+      if (response.statusCode == 200) {
+        List<dynamic> brand = jsonDecode(response.body);
+        final brands = brand.map((e) => Brand.fromJSON(e)).toList();
+
+        setState(() {
+          _brands = brands;
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('failed to load data');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _changeSelectedBrand(String brandName){
+    setState(() {
+      _selectedBrand = brandName;
+    });
+  }
+
+  Widget _buildBrandSection(String brand, Uint8List LogoImg, List<Product> products, void Function(String) changeSelctedBrand) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: (){
+            changeSelctedBrand(brand);
+          },
+          child: Container(
+            width: 362.w,
+            height: 142.h,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Image.memory(
+                LogoImg,
+                fit: BoxFit.cover
+            ),
+          )
+        ),
+        SizedBox(height: 16.h),
+        SizedBox(
+          height: products.length != 0 ? 260.h : 100.h,
+          child:
+              products.length != 0 ?
+            ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: products.length,
+              padding: EdgeInsets.only(right: 16.w),
+              itemBuilder: (context, index){
+                return ProductCard(product: products[index], showBrand: false);
+              },
+              separatorBuilder: (context, index) => SizedBox(width: 20.w),
+            ) :
+              Center(child: Text('상품이 없습니다.'))
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context){
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: EdgeInsets.only(left: 16.w, top: 23.h, bottom: 18.h),
             child: Text(
-              '환경 브랜드 상품',
+              widget.type == 'eco' ?
+                '환경 브랜드 상품' : '일반 브랜드 상품',
               style: TextStyle(
                 fontSize: 21.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          SizedBox(
-            height: 33.h,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: BrandFilterSection(
-                  brands: const ['All', 'EARTH, US', 'UPMOST', 'REBORN', 'Glück'],
-                  onBrandSelected: (brand) {
-                    setState(() {
-                      _selectedBrand = brand;
-                    });
-                  },
-                ),
+        ),
+        SizedBox(
+          height: 33.h,
+          child: _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: BrandFilterSection(
+                brands: ['All', ... _brands.map((brand) => brand.name).toList()],
+                selectedBrand: _selectedBrand,
+                onBrandSelected: (brand) {
+                  setState(() {
+                    _selectedBrand = brand;
+                  });
+                },
               ),
             ),
           ),
-          SizedBox(height: 20.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: _selectedBrand == 'All'
+        ),
+        SizedBox(height: 20.h),
+          _isLoading ? Center(child: CircularProgressIndicator()) :
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: _selectedBrand == 'All'
                 ? Column(
-                    children: _brandProducts.entries.map((entry) {
-                      return _buildBrandSection(entry.key, entry.value);
-                    }).toList(),
-                  )
-                : Column(
-                    children: [
-                      Container(
-                        width: 362.w,
-                        height: 142.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-                      if (_brandProducts[_selectedBrand]?.isNotEmpty ?? false)
-                        Row(
-                          children: [
-                            ProductCard(product: _brandProducts[_selectedBrand]![0], showBrand: false),
-                            SizedBox(width: 20.w),
-                            if (_brandProducts[_selectedBrand]!.length > 1)
-                              ProductCard(product: _brandProducts[_selectedBrand]![1], showBrand: false),
-                          ],
-                        ),
-                    ],
-                  ),
-          ),
-        ],
-      ),
+                children: _brands.map((brand) =>
+                   _buildBrandSection(
+                     brand.name,
+                     brand.brandImg,
+                     brand.products as List<Product>,
+                     _changeSelectedBrand
+                   )
+                ).toList()
+              ) : _buildBrandSection(_selectedBrand,
+                  _brands.firstWhere((brand) => brand.name == _selectedBrand).brandImg,
+                  _brands.firstWhere((brand) => brand.name == _selectedBrand).products as List<Product>,
+                  _changeSelectedBrand)
+            )
+      ],
     );
   }
 }
@@ -336,11 +360,13 @@ class _EcoBrandTabState extends State<EcoBrandTab> {
 class BrandFilterSection extends StatefulWidget {
   final List<String> brands;
   final Function(String) onBrandSelected;
-  
+  final String selectedBrand;
+
   const BrandFilterSection({
     super.key, 
     required this.brands,
     required this.onBrandSelected,
+    required this.selectedBrand
   });
 
   @override
@@ -348,7 +374,6 @@ class BrandFilterSection extends StatefulWidget {
 }
 
 class _BrandFilterSectionState extends State<BrandFilterSection> {
-  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -360,229 +385,13 @@ class _BrandFilterSectionState extends State<BrandFilterSection> {
             padding: EdgeInsets.only(right: 9.w),
             child: BrandFilterChip(
               label: widget.brands[index],
-              isSelected: _selectedIndex == index,
+              isSelected: widget.selectedBrand == widget.brands[index],
               onSelected: () {
-                setState(() {
-                  _selectedIndex = index;
-                });
                 widget.onBrandSelected(widget.brands[index]);
               },
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class GeneralBrandTab extends StatelessWidget {
-  const GeneralBrandTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const GeneralBrandTabContent();
-  }
-}
-
-class GeneralBrandTabContent extends StatefulWidget {
-  const GeneralBrandTabContent({super.key});
-
-  @override
-  State<GeneralBrandTabContent> createState() => _GeneralBrandTabContentState();
-}
-
-class _GeneralBrandTabContentState extends State<GeneralBrandTabContent> {
-  String _selectedBrand = 'All';
-
-  final Map<String, List<Product>> _brandProducts = {
-    'EARTH, US': [
-      Product(
-        id: 'earth_3',
-        name: '어스어스 캔버스백',
-        brand: 'EARTH, US',
-        price: '45,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-      Product(
-        id: 'earth_4',
-        name: '어스어스 키체인',
-        brand: 'EARTH, US',
-        price: '15,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-    ],
-    'UPMOST': [
-      Product(
-        id: 'upmost_1',
-        name: 'AirPods Pro Case [ White Blue ]',
-        brand: 'UPMOST',
-        price: '25,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-      Product(
-        id: 'upmost_2',
-        name: 'OFF WHITE [PINK]',
-        brand: 'UPMOST',
-        price: '113,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-    ],
-    'REBORN': [
-      Product(
-        id: 'reborn_3',
-        name: '리본 데님 백팩',
-        brand: 'REBORN',
-        price: '89,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-      Product(
-        id: 'reborn_4',
-        name: '리본 미니백',
-        brand: 'REBORN',
-        price: '67,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-    ],
-    'Romang Story': [
-      Product(
-        id: 'romang_1',
-        name: '로망 스토리 숄더백',
-        brand: 'Romang Story',
-        price: '78,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-      Product(
-        id: 'romang_2',
-        name: '로망 스토리 클러치',
-        brand: 'Romang Story',
-        price: '45,000',
-        imageUrl: 'https://via.placeholder.com/170',
-        category: 'general',
-      ),
-    ],
-  };
-
-  Widget _buildBrandSection(String brand, List<Product> products) {
-    return Column(
-      children: [
-        Container(
-          width: 362.w,
-          height: 142.h,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-        ),
-        SizedBox(height: 16.h),
-        Row(
-          children: [
-            ProductCard(product: products[0], showBrand: false),
-            SizedBox(width: 20.w),
-            if (products.length > 1)
-              ProductCard(product: products[1], showBrand: false),
-          ],
-        ),
-        SizedBox(height: 27.h),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GeneralBannerWidget(),
-          Padding(
-            padding: EdgeInsets.only(left: 15.w, top: 19.h, bottom: 18.h),
-            child: Text(
-              '최우주님을 위한 추천 상품',
-              style: TextStyle(
-                fontSize: 21.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 280.h,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.only(left: 16.w, right: 16.w),
-              itemCount: _brandProducts.values.expand((products) => products).length,
-              itemBuilder: (context, index) => ProductCard(
-                product: _brandProducts.values.expand((products) => products).toList()[index],
-              ),
-              separatorBuilder: (context, index) => SizedBox(width: 20.w),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 15.w, top: 23.h, bottom: 18.h),
-            child: Text(
-              '일반 브랜드 상품',
-              style: TextStyle(
-                fontSize: 21.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 33.h,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: BrandFilterSection(
-                  brands: const ['All', 'EARTH, US', 'UPMOST', 'REBORN', 'Romang Story'],
-                  onBrandSelected: (brand) {
-                    setState(() {
-                      _selectedBrand = brand;
-                    });
-                  },
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 20.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: _selectedBrand == 'All'
-                ? Column(
-                    children: _brandProducts.entries.map((entry) {
-                      return _buildBrandSection(entry.key, entry.value);
-                    }).toList(),
-                  )
-                : Column(
-                    children: [
-                      Container(
-                        width: 362.w,
-                        height: 142.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-                      if (_brandProducts[_selectedBrand]?.isNotEmpty ?? false)
-                        Row(
-                          children: [
-                            ProductCard(product: _brandProducts[_selectedBrand]![0], showBrand: false),
-                            SizedBox(width: 20.w),
-                            if (_brandProducts[_selectedBrand]!.length > 1)
-                              ProductCard(product: _brandProducts[_selectedBrand]![1], showBrand: false),
-                          ],
-                        ),
-                    ],
-                  ),
-          ),
-        ],
       ),
     );
   }

@@ -21,7 +21,7 @@ class BrandFilterChip extends StatelessWidget {
       selected: isSelected,
       onSelected: (_) => onSelected(),
       selectedColor: Colors.black,
-      backgroundColor: isSelected ? Colors.black : Colors.grey[200],
+      backgroundColor: isSelected ? Colors.black : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(25.r),
       ),
